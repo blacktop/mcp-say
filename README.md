@@ -18,8 +18,10 @@
 
 Adds Text-to-Speech to things like Claude Desktop and Cursor IDE.  
 
-It registers four TTS tools: 
- - `say_tts` 
+It registers six TTS tools: 
+ - `say_tts` (macOS only)
+ - `windows_speech_tts` (Windows/WSL)
+ - `windows_speech_voices` (Windows/WSL)
  - `elevenlabs_tts`
  - `google_tts`
  - `openai_tts`
@@ -27,6 +29,26 @@ It registers four TTS tools:
 ### `say_tts`
 
 Uses the macOS `say` binary to speak the text with built-in system voices
+
+### `windows_speech_tts` & `windows_speech_voices`
+
+**Cross-platform Windows Speech API TTS for offline speech synthesis**
+
+These tools provide Windows text-to-speech functionality that works seamlessly on both native Windows and WSL (Windows Subsystem for Linux) environments. By using the same PowerShell-based approach for both platforms, we ensure consistent behavior regardless of where the application runs.
+
+**Key Features:**
+- **Unified Implementation**: Single codebase works on both Windows and WSL
+- **Offline Operation**: No API keys or internet connection required
+- **Voice Selection**: Choose from all installed Windows TTS voices via `windows_speech_voices`
+- **Voice Control**: Specify exact voice in `windows_speech_tts` (e.g., "Microsoft Zira Desktop")
+- **Rate Control**: Speech rate adjustment from -10 (slowest) to 10 (fastest)
+- **Security**: Proper text escaping prevents command injection attacks
+
+**Why This Approach Works for Both Platforms:**
+- **Windows**: Direct access to `powershell.exe` and Windows Speech API
+- **WSL**: Windows interop allows executing `powershell.exe` from Linux, bridging the gap where WSL cannot access Linux audio devices (ALSA/PulseAudio)
+
+**Technical Implementation**: Uses `powershell.exe -Command` to execute `System.Speech.Synthesis.SpeechSynthesizer` with proper text and voice name escaping, plus cancellation support.
 
 ### `elevenlabs_tts`
 
@@ -85,6 +107,23 @@ When enabled, tools return "Speech completed" instead of echoing the spoken text
 
 ### Install
 
+#### Linux/WSL Build Dependencies
+
+On Linux and WSL, you need to install ALSA development libraries before building:
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install libasound2-dev
+
+# Fedora/RHEL
+sudo dnf install alsa-lib-devel
+
+# Arch Linux
+sudo pacman -S alsa-lib
+```
+
+#### Go Install
+
 ```bash
 go install github.com/blacktop/mcp-tts@latest
 ```
@@ -97,6 +136,8 @@ TTS (text-to-speech) MCP Server.
 Provides multiple text-to-speech services via MCP protocol:
 
 • say_tts - Uses macOS built-in 'say' command (macOS only)
+• windows_speech_tts - Uses Windows Speech API via PowerShell (Windows/WSL)
+• windows_speech_voices - Lists available Windows Speech API voices (Windows/WSL)
 • elevenlabs_tts - Uses ElevenLabs API for high-quality speech synthesis
 • google_tts - Uses Google's Gemini TTS models for natural speech
 • openai_tts - Uses OpenAI's TTS API with various voice options
